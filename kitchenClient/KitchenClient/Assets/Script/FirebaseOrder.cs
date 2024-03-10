@@ -1,6 +1,7 @@
 using Firebase;
 using Firebase.Database;
 using Firebase.Extensions;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,7 +35,8 @@ public class FirebaseOrder : MonoBehaviour
             return;
         }
 
-        string newKey = reference.Child("recipeData").Push().Key;
+        long timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds(); 
+        string newKey = timestamp.ToString();
         reference.Child("recipeData").Child(newKey).SetValueAsync(newValue).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted || task.IsCanceled)
