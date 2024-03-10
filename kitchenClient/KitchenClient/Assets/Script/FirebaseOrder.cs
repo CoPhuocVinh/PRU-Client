@@ -9,6 +9,9 @@ public class FirebaseOrder : MonoBehaviour
 {
     DatabaseReference reference;
 
+    [SerializeField] private bool isFullOrder = false;
+    [SerializeField] GameObject notifyFull;
+
     void Start()
     {
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -20,11 +23,17 @@ public class FirebaseOrder : MonoBehaviour
             }
             reference = FirebaseDatabase.DefaultInstance.RootReference;
         });
-
     }
 
     public void AddRecipeData(string newValue)
     {
+        GetIsFullOrder();
+        if (isFullOrder)
+        {
+            notifyFull.SetActive(true);
+            return;
+        }
+
         string newKey = reference.Child("recipeData").Push().Key;
         reference.Child("recipeData").Child(newKey).SetValueAsync(newValue).ContinueWithOnMainThread(task =>
         {
@@ -35,6 +44,40 @@ public class FirebaseOrder : MonoBehaviour
             }
 
             Debug.Log("Recipe data added successfully.");
+        });
+    }
+
+    void GetIsFullOrder()
+    {
+        reference.Child("isFullOrder").GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled)
+            {
+                Debug.LogError($"Failed to fetch IsFullOrder value: {task.Exception}");
+                return;
+            }
+
+            DataSnapshot snapshot = task.Result;
+
+            if (snapshot != null && snapshot.Exists)
+            {
+                string isFullOrder = snapshot.Value.ToString();
+                if (isFullOrder.Equals("True"))
+                {
+                    this.isFullOrder = true;
+                    Debug.Log(isFullOrder);
+                }
+                else
+                {
+                    this.isFullOrder = false;
+                    Debug.Log(isFullOrder);
+                }
+                
+            }
+            else
+            {
+                Debug.LogWarning("IsFullOrder data not found.");
+            }
         });
     }
 }
